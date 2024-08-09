@@ -5,6 +5,7 @@ import { convertLatexToAsciiMath, MathfieldElement } from "mathlive";
 import { useEffect, useRef, useState } from "react";
 import { ComputeEngine } from "@cortex-js/compute-engine";
 import "//unpkg.com/mathlive";
+import { evalMathJSON } from "./interpreter";
 
 declare global {
 	namespace JSX {
@@ -19,6 +20,7 @@ declare global {
 
 function App() {
 	const ref = useRef<HTMLDivElement>(null);
+	const [sampler, setSampler] = useState<"interval" | "builtIn">("interval");
 	const [value, setValue] = useState<string>("x*2");
 	const [asciiMathValue, setAsciiMathValue] = useState<string>("x*2");
 	const [compiledFn, setCompiledFn] = useState<{
@@ -61,15 +63,16 @@ function App() {
 				data: [
 					{
 						fn: evaluator,
-						sampler: "builtIn",
-						graphType: "polyline",
+						sampler: sampler === "interval" ? "interval" : "builtIn",
+						graphType: sampler === "interval" ? "interval" : "polyline",
+						nSamples: 5000,
 					},
 				],
 			});
 		} catch (error) {
 			console.error(error);
 		}
-	}, [ref, asciiMathValue, compiledFn]);
+	}, [ref, asciiMathValue, compiledFn, sampler]);
 
 	const setMfValue = () => {
 		const value = mf.current!.getValue();
@@ -77,25 +80,40 @@ function App() {
 		setAsciiMathValue(convertLatexToAsciiMath(value));
 
 		try {
-			const expr = MathfieldElement.computeEngine!.parse(value);
-			const fn = expr.compile();
-			if (fn) {
-				const wrapper = (scope = {}) => {
-					try {
-						return fn!(scope);
-					} catch (error) {
-						console.error(error);
-						return undefined;
-					}
-				};
+			const expr = mf.current!.expression;
+
+			if (sampler === "interval") {
+				const mathJson = JSON.stringify(expr);
 				setCompiledFn({
-					func: wrapper,
-				});
+					func: (scope = {}) => {
+						try {
+							return evalMathJSON(mathJson, scope);
+						} catch (error) {
+							console.error(error);
+							return undefined;
+						}
+					},
+				})
 			} else {
-				setCompiledFn({
-					func: undefined,
-				});
+				const fn = expr.compile();
+				if (fn) {
+					const wrapper = (scope = {}) => {
+						try {
+							return fn!(scope);
+						} catch (error) {
+							console.error(error);
+							return undefined;
+						}
+					};
+					setCompiledFn({
+						func: wrapper,
+					});
+					return;
+				}
 			}
+			setCompiledFn({
+				func: undefined,
+			});
 		} catch (error) {
 			setCompiledFn({
 				func: undefined,
