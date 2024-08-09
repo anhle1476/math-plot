@@ -65,7 +65,7 @@ function App() {
 						fn: evaluator,
 						sampler: sampler === "interval" ? "interval" : "builtIn",
 						graphType: sampler === "interval" ? "interval" : "polyline",
-						nSamples: 5000,
+						fnType: sampler === "interval" ? "implicit" : undefined,
 					},
 				],
 			});
@@ -84,6 +84,8 @@ function App() {
 
 			if (sampler === "interval") {
 				const mathJson = JSON.stringify(expr);
+				console.clear();
+				console.log(mathJson, undefined, 2);
 				setCompiledFn({
 					func: (scope = {}) => {
 						try {
@@ -93,7 +95,8 @@ function App() {
 							return undefined;
 						}
 					},
-				})
+				});
+				return;
 			} else {
 				const fn = expr.compile();
 				if (fn) {

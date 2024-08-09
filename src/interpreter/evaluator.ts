@@ -54,7 +54,10 @@ function evaluate(value: any, scope: ProcessedScope): Interval {
         }
 
         throw new Error(`Unknown variable: ${value}`);
-    } 
+    }
+    if (typeof value === "object" && "lo" in value && "hi" in value) {
+        return new Interval(value.lo, value.hi);
+    }
     
     throw new Error(`Invalid value: ${value}`);
 }
