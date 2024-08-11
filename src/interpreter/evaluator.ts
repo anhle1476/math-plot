@@ -9,7 +9,8 @@ export function evalMathJSON(mathJson: string, scope: Scope): Interval {
 	const mathVal = JSON.parse(mathJson);
 	const processed = processScope(scope);
 
-	return evaluate(mathVal, processed);
+	const res = evaluate(mathVal, processed);
+    return res;
 }
 
 function processScope(scope: Scope): ProcessedScope {
@@ -73,18 +74,26 @@ function evaluateExp(exp: MathJSONExpression, scope: ProcessedScope): Interval {
         throw new Error(exp.map(String).join("\n"));
     }
 
-	if (!(operator in OPERATORS)) {
+    const operatorFunc = OPERATORS[operator];
+	if (!operatorFunc) {
 		throw new Error(`Operator not supported: ${operator}`);
 	}
 
     if (exp.length === 2) {
         return OPERATORS[operator](evaluate(exp[1], scope));
-    } else {
-        // go through all arguments
-        let result = evaluate(exp[1], scope);
-        for (let i = 2; i < exp.length; i++) {
-            result = OPERATORS[operator](result, evaluate(exp[i], scope));
-        }
-        return result;
     }
+
+    // handle special case
+    if (operator === "Power" && exp.length === 3) {
+        if (exp[1] === "ExponentialE") {
+            return OPERATORS["Exp"](evaluate(exp[2], scope));
+        }
+    }
+
+    // go through all arguments
+    let result = evaluate(exp[1], scope);
+    for (let i = 2; i < exp.length; i++) {
+        result = OPERATORS[operator](result, evaluate(exp[i], scope));
+    }
+    return result;
 }
