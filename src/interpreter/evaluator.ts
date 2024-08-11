@@ -83,13 +83,6 @@ function evaluateExp(exp: MathJSONExpression, scope: ProcessedScope): Interval {
         return OPERATORS[operator](evaluate(exp[1], scope));
     }
 
-    // handle special case
-    if (operator === "Power" && exp.length === 3) {
-        if (exp[1] === "ExponentialE") {
-            return OPERATORS["Exp"](evaluate(exp[2], scope));
-        }
-    }
-
     // go through all arguments
     let result = evaluate(exp[1], scope);
     for (let i = 2; i < exp.length; i++) {
