@@ -90,3 +90,37 @@ function evaluateExp(exp: MathJSONExpression, scope: ProcessedScope): Interval {
     }
     return result;
 }
+
+export function isImplicitFunction(mathJson: string, implicitVar = 'y'): boolean {
+    if (!mathJson) return false;
+
+    const mathVal = JSON.parse(mathJson);
+    if (typeof mathVal === 'string') {
+        return mathVal === implicitVar;
+    }
+
+    if (!Array.isArray(mathVal)) return false;
+
+    let implicit = false;
+
+    const objQueue: any[][] = [mathVal];
+    while (objQueue.length > 0) {
+        const mathObj = objQueue.shift();
+        if (!mathObj) break;
+
+        // ignore first element as it is the operator
+        for (let i = 1; i < mathObj.length; i++) {
+            const mathElem = mathObj[i];
+            if (mathElem === implicitVar) {
+                implicit = true;
+                break;
+            }
+
+            if (Array.isArray(mathElem)) {
+                objQueue.push(mathElem);
+            }
+        }
+    }
+
+    return implicit;
+}

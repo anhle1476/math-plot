@@ -4,7 +4,7 @@ import { ComputeEngine } from "@cortex-js/compute-engine";
 import functionPlot from "function-plot";
 import { MathfieldElement } from "mathlive";
 import { useEffect, useRef, useState } from "react";
-import { evalMathJSON } from "./interpreter";
+import { evalMathJSON, isImplicitFunction } from "./interpreter";
 import "//unpkg.com/mathlive";
 
 declare global {
@@ -51,8 +51,9 @@ function App() {
 		if (!ref.current) return;
 
 		const evaluator = compiledFn.func ? compiledFn.func : mathJsonValue;
+		const isImplicit = isImplicitFunction(mathJsonValue);
 		try {
-			functionPlot({
+			const chart = functionPlot({
 				target: "#app",
 				grid: true,
 				tip: {
@@ -64,10 +65,11 @@ function App() {
 						fn: evaluator,
 						sampler: sampler === "interval" ? "interval" : "builtIn",
 						graphType: sampler === "interval" ? "interval" : "polyline",
-						// fnType: sampler === "interval" ? "implicit" : undefined,
+						fnType: isImplicit ? "implicit" : "linear",
 					},
 				],
 			});
+			console.log(chart)
 		} catch (error) {
 			console.error(error);
 		}
